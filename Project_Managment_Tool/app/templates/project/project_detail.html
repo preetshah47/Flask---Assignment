@@ -1,0 +1,13 @@
+{% extends 'layout.html' %}
+{% block content %}
+  <h2>{{ project.name }}</h2>
+  <p><strong>Description:</strong> {{ project.description }}</p>
+  <p><strong>Deadline:</strong> {{ project.deadline }}</p>
+  <p><strong>Status:</strong> {{ project.status }}</p>
+  <p><strong>Manager:</strong> {{ project.manager.name }}</p>
+  <p><strong>Members:</strong>
+    {% for member in project.members %}
+      {{ member.name }}{% if not loop.last %}, {% endif %}
+    {% endfor %}
+  </p>
+{% endblock %}

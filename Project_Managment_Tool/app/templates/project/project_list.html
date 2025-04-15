@@ -1,0 +1,42 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h2>All Projects</h2>
+
+{% if current_user.role == 'admin' %}
+  <a href="{{ url_for('project.create_project') }}" class="btn btn-success mb-3">+ Create Project</a>
+{% endif %}
+
+<table class="table table-striped table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Name</th>
+            <th>Manager</th>
+            <th>Deadline</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for project in projects %}
+        <tr>
+            <td>
+                <a href="{{ url_for('project.project_detail', project_id=project.id) }}">
+                    {{ project.name }}
+                </a>
+            </td>
+            <td>{{ project.manager.name if project.manager else "N/A" }}</td>
+            <td>{{ project.deadline.strftime('%Y-%m-%d') if project.deadline else "N/A" }}</td>
+            <td>
+                <span class="badge 
+                    {% if project.status == 'Completed' %} bg-success
+                    {% elif project.status == 'In Progress' %} bg-warning text-dark
+                    {% else %} bg-secondary
+                    {% endif %}">
+                    {{ project.status }}
+                </span>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

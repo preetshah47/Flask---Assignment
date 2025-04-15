@@ -1,0 +1,23 @@
+{% extends 'layout.html' %}
+{% block content %}
+  <h2>Create New Project</h2>
+  <form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+      {{ form.name.label }} {{ form.name(class="form-control") }}
+    </div>
+    <div class="mb-3">
+      {{ form.description.label }} {{ form.description(class="form-control") }}
+    </div>
+    <div class="mb-3">
+      {{ form.deadline.label }} {{ form.deadline(class="form-control") }}
+    </div>
+    <div class="mb-3">
+      {{ form.status.label }} {{ form.status(class="form-select") }}
+    </div>
+    <div class="mb-3">
+      {{ form.manager.label }} {{ form.manager(class="form-select") }}
+    </div>
+    <button type="submit" class="btn btn-primary">{{ form.submit.label }}</button>
+  </form>
+{% endblock %}
