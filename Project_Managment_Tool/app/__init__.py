@@ -28,6 +28,10 @@ def create_app():
     from .project.routes import project
     app.register_blueprint(project)
 
+    # register the task blueprint
+    from .task.routes import task_bp
+    app.register_blueprint(task_bp)
+
     # Create DB + default admin
     with app.app_context():
         db.create_all()

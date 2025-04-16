@@ -1,0 +1,37 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2 class="mb-4">Create New Task</h2>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        {{ form.title.label(class="form-label") }}
+        {{ form.title(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.description.label(class="form-label") }}
+        {{ form.description(class="form-control", rows="3") }}
+    </div>
+    <div class="mb-3">
+        {{ form.due_date.label(class="form-label") }}
+        {{ form.due_date(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.priority.label(class="form-label") }}
+        {{ form.priority(class="form-select") }}
+    </div>
+    <div class="mb-3">
+        {{ form.status.label(class="form-label") }}
+        {{ form.status(class="form-select") }}
+    </div>
+    <div class="mb-3">
+        {{ form.project.label(class="form-label") }}
+        {{ form.project(class="form-select") }}
+    </div>
+    <div class="mb-3">
+        {{ form.assigned_users.label(class="form-label") }}
+        {{ form.assigned_users(class="form-control", multiple=true, size=5) }}
+    </div>
+    <button type="submit" class="btn btn-success">{{ form.submit.label.text }}</button>
+</form>
+{% endblock %}

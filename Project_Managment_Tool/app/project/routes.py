@@ -1,5 +1,3 @@
-# 
-
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app.models import db, Project, User
@@ -12,6 +10,8 @@ project = Blueprint('project', __name__, url_prefix='/projects')
 def list_projects():
     if current_user.role == 'admin':
         projects = Project.query.all()
+    elif current_user.role == 'project_manager':
+        projects = Project.query.filter_by(manager_id=current_user.id).all()
     else:
         projects = current_user.projects  # Assigned projects only
     return render_template('project/project_list.html', projects=projects)
@@ -46,3 +46,25 @@ def create_project():
 def project_detail(project_id):
     project = Project.query.get_or_404(project_id)
     return render_template('project/project_detail.html', project=project)
+@project.route('/dashboard')
+@login_required
+def project_dashboard():
+    if current_user.role == 'admin':
+        projects = Project.query.all()
+    elif current_user.role == 'project_manager':
+        projects = Project.query.filter_by(manager_id=current_user.id).all()
+    else:
+        projects = current_user.projects
+
+    project_data = []
+    for project in projects:
+        total_tasks = len(project.tasks)
+        completed_tasks = len([task for task in project.tasks if task.status.lower() == 'completed'])
+        percent_complete = int((completed_tasks / total_tasks) * 100) if total_tasks > 0 else 0
+
+        project_data.append({
+            'project': project,
+            'percent_complete': percent_complete
+        })
+
+    return render_template('project/dashboard_project.html', projects=project_data)

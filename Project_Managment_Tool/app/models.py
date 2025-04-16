@@ -42,18 +42,22 @@ project_members = db.Table('project_members',
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'))
 )
 
-
 class Task(db.Model):
-    __tablename__ = 'tasks'
+    __tablename__ = 'tasks'  
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(150), nullable=False)
-    description = db.Column(db.Text, nullable=True)
-    due_date = db.Column(db.DateTime, nullable=True)
-    status = db.Column(db.String(50), default='To Do')  # e.g., 'To Do', 'In Progress', 'Completed'
-    priority = db.Column(db.String(50), default='Medium')  # e.g., 'Low', 'Medium', 'High'
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
-    assigned_to = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # User assigned to the task
+    title = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text)
+    due_date = db.Column(db.Date)
+    priority = db.Column(db.String(20))  # e.g., Low, Medium, High
+    status = db.Column(db.String(20), default='To Do')  # To Do, In Progress, Completed
 
-    def __repr__(self):
-        return f'<Task {self.name}>'
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    project = db.relationship('Project', backref=db.backref('tasks', lazy=True))
+
+    assigned_users = db.relationship('User', secondary='task_user', backref='tasks')
+
+task_user = db.Table('task_user',
+    db.Column('task_id', db.Integer, db.ForeignKey('tasks.id')),  
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'))  
+)
