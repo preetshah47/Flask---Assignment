@@ -12,19 +12,41 @@ auth = Blueprint('auth', __name__, url_prefix='/auth')
 def dashboard():
     return render_template('dashboard.html')
 
+# @auth.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if current_user.is_authenticated:
+#         return redirect(url_for('auth.dashboard'))  # Redirect to dashboard if already logged in
+
+#     form = LoginForm()
+#     if form.validate_on_submit():
+#         user = User.query.filter_by(email=form.email.data).first()
+#         if user and check_password_hash(user.password_hash, form.password.data):
+#             login_user(user)
+#             return redirect(url_for('auth.dashboard'))  # Redirect to the dashboard after login
+#         else:
+#             flash('Invalid login credentials', 'danger')
+#     return render_template('auth/login.html', form=form)
+
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('auth.dashboard'))  # Redirect to dashboard if already logged in
-
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        if user and check_password_hash(user.password_hash, form.password.data):
+        if user and check_password_hash(user.password_hash, form.password.data):  # ✅ FIXED
             login_user(user)
-            return redirect(url_for('auth.dashboard'))  # Redirect to the dashboard after login
+            flash('Logged in successfully.', 'success')
+
+            # Redirect based on role
+            if user.role == 'admin':
+                return redirect(url_for('main.admin_dashboard'))
+            elif user.role == 'project_manager':
+                return redirect(url_for('main.project_manager_dashboard'))
+            elif user.role == 'team_member':
+                return redirect(url_for('main.team_member_dashboard'))
+            else:
+                return redirect(url_for('home'))
         else:
-            flash('Invalid login credentials', 'danger')
+            flash('Invalid email or password.', 'danger')
     return render_template('auth/login.html', form=form)
 
 @auth.route('/logout')
