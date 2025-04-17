@@ -37,7 +37,7 @@ def create_project():
         db.session.add(new_project)
         db.session.commit()
         flash("Project created successfully.", "success")
-        return redirect(url_for('project.list_projects'))
+        return redirect(url_for('main.admin_dashboard'))
 
     return render_template('project/create_project.html', form=form)
 

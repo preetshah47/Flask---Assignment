@@ -5,44 +5,87 @@ from app.models import Project, User
 from app import db
 
 main = Blueprint('main', __name__)
+from flask_login import current_user
 
 @main.route('/')
 def home():
     if current_user.is_authenticated:
-        return redirect(url_for('project.list_projects'))
+        if current_user.role == 'admin':
+            return redirect(url_for('main.admin_dashboard'))
+        elif current_user.role == 'project_manager':
+            return redirect(url_for('main.project_manager_dashboard'))
+        elif current_user.role == 'team_member':
+            return redirect(url_for('main.team_member_dashboard'))
     return render_template('welcome.html')
-
 @main.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
     if current_user.role != 'admin':
         return redirect(url_for('main.home'))
 
-    projects = Project.query.all()
-    total_users = User.query.count()
+    search_query = request.args.get('search', '').lower()
+    status_filter = request.args.get('status', '')
+
+    all_projects = Project.query.all()
     users = User.query.all()
-    total_projects = len(projects)
-    completed_projects = len([p for p in projects if p.status == 'Completed'])
+
+    # Apply search and status filter
+    filtered_projects = [
+        p for p in all_projects
+        if (search_query in p.name.lower()) and
+           (status_filter == '' or p.status == status_filter)
+    ]
+
+    # Analytics should reflect all data, not filtered ones
+    total_users = len(users)
+    total_projects = len(all_projects)
+    completed_projects = len([p for p in all_projects if p.status == 'Completed'])
 
     return render_template(
         'dashboard/admin_dashboard.html',
-        projects=projects,
+        projects=filtered_projects,
         users=users,
         total_users=total_users,
         total_projects=total_projects,
-        completed_projects=completed_projects
+        completed_projects=completed_projects,
+        search_query=search_query,
+        status_filter=status_filter
     )
+
 
 
 @main.route('/project_manager/dashboard')
 @login_required
 def project_manager_dashboard():
-    return render_template('dashboard/pm_dashboard.html')
+    if current_user.role != 'project_manager':
+        return redirect(url_for('main.home'))
+
+    projects = Project.query.filter_by(manager_id=current_user.id).all()
+
+    # Calculate progress for each project
+    project_data = []
+    for project in projects:
+        total_tasks = len(project.tasks)
+        completed_tasks = len([task for task in project.tasks if task.status == 'Completed'])
+        progress = int((completed_tasks / total_tasks) * 100) if total_tasks > 0 else 0
+
+        project_data.append({
+            'project': project,
+            'progress': progress,
+            'completed_tasks': completed_tasks,
+            'total_tasks': total_tasks
+        })
+    return render_template('dashboard/pm_dashboard.html', project_data=project_data)
 
 @main.route('/team_member/dashboard')
 @login_required
 def team_member_dashboard():
-    return render_template('dashboard/team_dashboard.html')
+    if current_user.role != 'team_member':
+        return redirect(url_for('main.home'))
+
+    tasks = current_user.tasks
+
+    return render_template('dashboard/team_dashboard.html', tasks=tasks)
 
 @main.route('/admin/edit_user/<int:user_id>', methods=['GET', 'POST'])
 @login_required

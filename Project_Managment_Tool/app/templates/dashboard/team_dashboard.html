@@ -1,5 +1,41 @@
 {% extends 'layout.html' %}
 {% block content %}
-  <h2>Welcome {{ current_user.name }}</h2>
-  <p>This is the Team Member dashboard.</p>
+<div class="container mt-4">
+    <h2 class="mb-4">Your Tasks</h2>
+
+    {% if tasks %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Complete</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>{{ task.title }}</td>
+                <td>{{ task.description }}</td>
+                <td>{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else 'N/A' }}</td>
+                <td>{{ task.status }}</td>
+                <td>
+                    {% if task.status != 'Completed' %}
+                    <form action="{{ url_for('task.complete_task', task_id=task.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-success">Complete</button>
+                    </form>
+                    {% else %}
+                    <span class="text-success">Done</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No tasks assigned to you yet.</p>
+    {% endif %}
+</div>
 {% endblock %}

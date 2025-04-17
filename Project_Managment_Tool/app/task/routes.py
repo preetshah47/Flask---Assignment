@@ -17,10 +17,26 @@ def list_tasks():
         tasks = current_user.tasks
     return render_template('tasks/task_list.html', tasks=tasks)
 
-@task_bp.route('/create', methods=['GET', 'POST'])
+@task_bp.route('/project/<int:project_id>/tasks')
 @login_required
-def create_task():
+def tasks_by_project(project_id):
+    project = Project.query.get_or_404(project_id)
+
+    # Permission check: Only project manager of this project or admin can view
+    if current_user.role == 'admin' or (current_user.role == 'project_manager' and project.manager_id == current_user.id):
+        tasks = project.tasks
+        return render_template('tasks/task_list.html', tasks=tasks, project=project)
+    else:
+        flash("You don't have permission to view these tasks.", 'danger')
+        return redirect(url_for('main.project_manager_dashboard'))
+    
+@task_bp.route('/create/<int:project_id>', methods=['GET', 'POST'])
+@login_required
+def create_task(project_id):
+    project = Project.query.get_or_404(project_id)  
+    tasks = project.tasks
     form = TaskForm()
+
     if form.validate_on_submit():
         task = Task(
             title=form.title.data,
@@ -28,15 +44,17 @@ def create_task():
             due_date=form.due_date.data,
             priority=form.priority.data,
             status=form.status.data,
-            project=form.project.data
+            project=project  # Associate task with the specific project
         )
         for user in form.assigned_users.data:
             task.assigned_users.append(user)
+        
         db.session.add(task)
         db.session.commit()
         flash('Task created successfully!', 'success')
-        return redirect(url_for('task.list_tasks'))
-    return render_template('tasks/create_task.html', form=form)
+        return redirect(url_for('main.project_manager_dashboard'))  # Redirect to task list after creation
+
+    return render_template('tasks/create_task.html', form=form, tasks=tasks, project=project)
 
 @task_bp.route('/<int:task_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -63,7 +81,7 @@ def edit_task(task_id):
         task.assigned_users = form.assigned_users.data  # Update assigned users
         db.session.commit()  # Commit the changes to the database
         flash('Task updated successfully!', 'success')
-        return redirect(url_for('task.list_tasks'))
+        return redirect(url_for('task.tasks_by_project', project_id=task.project.id))
 
     return render_template('tasks/edit_task.html', form=form, task=task)
 

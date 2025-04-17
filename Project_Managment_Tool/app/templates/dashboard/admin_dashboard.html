@@ -65,6 +65,20 @@
 <!-- Project Management Section -->
 <div class="mb-4">
     <h4>Project Management</h4>
+    <form method="get" class="mb-4 d-flex gap-2">
+        <input type="text" name="search" class="form-control" placeholder="Search projects"
+               value="{{ search_query or '' }}">
+    
+        <select name="status" class="form-select" style="max-width: 200px;">
+            <option value="">All Statuses</option>
+            <option value="Not Started" {% if status_filter == 'Not Started' %}selected{% endif %}>Not Started</option>
+            <option value="In Progress" {% if status_filter == 'In Progress' %}selected{% endif %}>In Progress</option>
+            <option value="Completed" {% if status_filter == 'Completed' %}selected{% endif %}>Completed</option>
+        </select>
+    
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+    
     <a href="{{ url_for('project.create_project') }}" class="btn btn-primary mb-3">+ Add New Project</a>
 
     <!-- Project Table -->

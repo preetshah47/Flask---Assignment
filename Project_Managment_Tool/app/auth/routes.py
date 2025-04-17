@@ -12,27 +12,12 @@ auth = Blueprint('auth', __name__, url_prefix='/auth')
 def dashboard():
     return render_template('dashboard.html')
 
-# @auth.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if current_user.is_authenticated:
-#         return redirect(url_for('auth.dashboard'))  # Redirect to dashboard if already logged in
-
-#     form = LoginForm()
-#     if form.validate_on_submit():
-#         user = User.query.filter_by(email=form.email.data).first()
-#         if user and check_password_hash(user.password_hash, form.password.data):
-#             login_user(user)
-#             return redirect(url_for('auth.dashboard'))  # Redirect to the dashboard after login
-#         else:
-#             flash('Invalid login credentials', 'danger')
-#     return render_template('auth/login.html', form=form)
-
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        if user and check_password_hash(user.password_hash, form.password.data):  # ✅ FIXED
+        if user and check_password_hash(user.password_hash, form.password.data):  
             login_user(user)
             flash('Logged in successfully.', 'success')
 
