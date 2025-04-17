@@ -1,5 +1,7 @@
-from flask import Blueprint, render_template, redirect, url_for
+from flask import Blueprint, flash, render_template, redirect, url_for
 from flask_login import current_user, login_required
+from app.models import Project, User
+from app import db
 
 main = Blueprint('main', __name__)
 
@@ -12,7 +14,24 @@ def home():
 @main.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
-    return render_template('dashboard/admin_dashboard.html')
+    if current_user.role != 'admin':
+        return redirect(url_for('main.home'))
+
+    projects = Project.query.all()
+    total_users = User.query.count()
+    users = User.query.all()
+    total_projects = len(projects)
+    completed_projects = len([p for p in projects if p.status == 'Completed'])
+
+    return render_template(
+        'dashboard/admin_dashboard.html',
+        projects=projects,
+        users=users,
+        total_users=total_users,
+        total_projects=total_projects,
+        completed_projects=completed_projects
+    )
+
 
 @main.route('/project_manager/dashboard')
 @login_required
@@ -23,3 +42,39 @@ def project_manager_dashboard():
 @login_required
 def team_member_dashboard():
     return render_template('dashboard/team_dashboard.html')
+
+@main.route('/admin/edit_user/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def edit_user(user_id):
+    # Fetch the user by ID
+    user = User.query.get(user_id)
+    if not user:
+        flash('User not found', 'danger')
+        return redirect(url_for('admin.admin_dashboard'))
+
+    # Your logic for editing the user goes here
+    return render_template('edit_user.html', user=user)
+
+@main.route('/admin/delete_user/<int:user_id>', methods=['GET'])
+@login_required
+def delete_user(user_id):
+    # Ensure the current user is an admin
+    if current_user.role != 'admin':
+        return redirect(url_for('main.home'))
+
+    # Fetch the user by ID
+    user = User.query.get(user_id)
+    if not user:
+        flash('User not found', 'danger')
+        return redirect(url_for('main.admin_dashboard'))
+
+    # Deleting the user from the database
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        flash('User deleted successfully', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting user: {str(e)}', 'danger')
+
+    return redirect(url_for('main.admin_dashboard'))
