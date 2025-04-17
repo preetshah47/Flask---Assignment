@@ -80,6 +80,6 @@ def create_user():
         db.session.add(new_user)
         db.session.commit()
         flash('User created successfully!')
-        return redirect(url_for('auth.create_user'))
+        return redirect(url_for('main.admin_dashboard'))
 
     return render_template('auth/create_user.html', form=form)

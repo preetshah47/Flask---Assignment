@@ -62,9 +62,12 @@
     </table>
 </div>
 
-<!-- Project Table -->
-<div>
-    <h4>All Projects Overview</h4>
+<!-- Project Management Section -->
+<div class="mb-4">
+    <h4>Project Management</h4>
+    <a href="{{ url_for('project.create_project') }}" class="btn btn-primary mb-3">+ Add New Project</a>
+
+    <!-- Project Table -->
     <table class="table table-bordered">
         <thead class="table-dark">
             <tr>
@@ -72,6 +75,7 @@
                 <th>Manager</th>
                 <th>Status</th>
                 <th>Deadline</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -81,6 +85,11 @@
                 <td>{{ project.manager.name if project.manager else 'N/A' }}</td>
                 <td>{{ project.status }}</td>
                 <td>{{ project.deadline.strftime('%Y-%m-%d') if project.deadline else 'N/A' }}</td>
+                <td>
+                    <a href="{{ url_for('main.edit_project', project_id=project.id) }}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{{ url_for('main.delete_project', project_id=project.id) }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this project?');">Delete</a>
+                    <a href="{{ url_for('main.view_tasks', project_id=project.id) }}" class="btn btn-info btn-sm">View Tasks</a>
+                </td>
             </tr>
             {% endfor %}
         </tbody>

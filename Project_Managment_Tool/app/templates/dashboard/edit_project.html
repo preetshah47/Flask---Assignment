@@ -1,0 +1,24 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h2>Edit Project</h2>
+<form method="POST" action="">
+    <div class="mb-3">
+        <label class="form-label">Project Name</label>
+        <input type="text" name="name" class="form-control" value="{{ project.name }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select">
+            <option value="Not Started" {% if project.status == 'Not Started' %}selected{% endif %}>Not Started</option>
+            <option value="In Progress" {% if project.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+            <option value="Completed" {% if project.status == 'Completed' %}selected{% endif %}>Completed</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Deadline</label>
+        <input type="date" name="deadline" class="form-control" value="{{ project.deadline.strftime('%Y-%m-%d') if project.deadline else '' }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Update Project</button>
+</form>
+{% endblock %}
