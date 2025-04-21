@@ -5,6 +5,7 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
+# User Model
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
 
@@ -24,6 +25,7 @@ class User(UserMixin, db.Model):
     def get_id(self):
         return str(self.id)  # Required for Flask-Login
 
+# Project Model
 class Project(db.Model):
     __tablename__ = 'projects'
 
@@ -42,6 +44,7 @@ project_members = db.Table('project_members',
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'))
 )
 
+# Task Model 
 class Task(db.Model):
     __tablename__ = 'tasks'  
 

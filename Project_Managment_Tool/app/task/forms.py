@@ -10,7 +10,7 @@ def get_projects():
 def get_users():
     return User.query.filter_by(role='team_member').all()
 
-
+# Form for Task Creation
 class TaskForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     description = TextAreaField('Description')

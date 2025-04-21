@@ -7,13 +7,9 @@ from . import auth  # Ensure 'auth' is imported correctly
 
 auth = Blueprint('auth', __name__, url_prefix='/auth')
 
-@auth.route('/dashboard')
-@login_required
-def dashboard():
-    return render_template('dashboard.html')
-
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
+    # Login Form function
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
@@ -37,6 +33,7 @@ def login():
 @auth.route('/logout')
 @login_required
 def logout():
+    # Logout Function
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('auth.login'))
@@ -44,6 +41,7 @@ def logout():
 @auth.route('/admin/create_user', methods=['GET', 'POST'])
 @login_required
 def create_user():
+    # Creating User Function
     if current_user.role != 'admin':
         flash("You are not authorized to view this page.")
         return redirect(url_for('dashboard'))

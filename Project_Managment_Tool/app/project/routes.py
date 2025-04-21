@@ -8,6 +8,7 @@ project = Blueprint('project', __name__, url_prefix='/projects')
 @project.route('/')
 @login_required
 def list_projects():
+    # List Projects
     if current_user.role == 'admin':
         projects = Project.query.all()
     elif current_user.role == 'project_manager':
@@ -19,12 +20,20 @@ def list_projects():
 @project.route('/create', methods=['GET', 'POST'])
 @login_required
 def create_project():
-    if current_user.role != 'admin':
-        flash("Only admins can create projects.", "danger")
-        return redirect(url_for('project.list_projects'))
+    # Creating Project function
+    if current_user.role not in ['admin', 'project_manager']:
+        flash("You don't have permission to create projects.", "danger")
+        return redirect(url_for('main.home'))
 
     form = ProjectForm()
-    form.manager.choices = [(u.id, u.name) for u in User.query.filter_by(role='project_manager').all()]
+
+    if current_user.role == 'admin':
+        # Admin selects the manager
+        form.manager.choices = [(u.id, u.name) for u in User.query.filter_by(role='project_manager').all()]
+    else:
+        # Project Manager: auto-assign self as manager
+        form.manager.choices = [(current_user.id, current_user.name)]
+        form.manager.data = current_user.id
 
     if form.validate_on_submit():
         new_project = Project(
@@ -37,18 +46,19 @@ def create_project():
         db.session.add(new_project)
         db.session.commit()
         flash("Project created successfully.", "success")
-        return redirect(url_for('main.admin_dashboard'))
+
+        # Redirect based on role
+        if current_user.role == 'admin':
+            return redirect(url_for('main.admin_dashboard'))
+        else:
+            return redirect(url_for('main.project_manager_dashboard'))
 
     return render_template('project/create_project.html', form=form)
 
-@project.route('/<int:project_id>')
-@login_required
-def project_detail(project_id):
-    project = Project.query.get_or_404(project_id)
-    return render_template('project/project_detail.html', project=project)
 @project.route('/dashboard')
 @login_required
 def project_dashboard():
+    # For Project dashboard
     if current_user.role == 'admin':
         projects = Project.query.all()
     elif current_user.role == 'project_manager':

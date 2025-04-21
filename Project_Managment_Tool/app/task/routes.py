@@ -8,6 +8,7 @@ task_bp = Blueprint('task', __name__, url_prefix='/tasks')
 @task_bp.route('/')
 @login_required
 def list_tasks():
+    # List all the task
     if current_user.role == 'admin':
         tasks = Task.query.all()
     elif current_user.role == 'project_manager':
@@ -20,6 +21,7 @@ def list_tasks():
 @task_bp.route('/project/<int:project_id>/tasks')
 @login_required
 def tasks_by_project(project_id):
+    # List task by project
     project = Project.query.get_or_404(project_id)
 
     # Permission check: Only project manager of this project or admin can view
@@ -33,6 +35,7 @@ def tasks_by_project(project_id):
 @task_bp.route('/create/<int:project_id>', methods=['GET', 'POST'])
 @login_required
 def create_task(project_id):
+    # Create task for the particular project
     project = Project.query.get_or_404(project_id)  
     tasks = project.tasks
     form = TaskForm()
@@ -52,13 +55,14 @@ def create_task(project_id):
         db.session.add(task)
         db.session.commit()
         flash('Task created successfully!', 'success')
-        return redirect(url_for('main.project_manager_dashboard'))  # Redirect to task list after creation
+        return redirect(url_for('main.view_tasks', project_id=project.id))  # Redirect to task list after creation
 
     return render_template('tasks/create_task.html', form=form, tasks=tasks, project=project)
 
 @task_bp.route('/<int:task_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_task(task_id):
+    # Edit the task
     task = Task.query.get_or_404(task_id)
 
     # Ensure the user has permission to edit the task
@@ -88,6 +92,7 @@ def edit_task(task_id):
 @task_bp.route('/<int:task_id>/delete', methods=['POST'])
 @login_required
 def delete_task(task_id):
+    # Delete the task
     task = Task.query.get_or_404(task_id)
 
     # Only allow admin or project manager who owns the project
@@ -104,6 +109,7 @@ def delete_task(task_id):
 @task_bp.route('/<int:task_id>/complete', methods=['POST'])
 @login_required
 def complete_task(task_id):
+    # Complete Task function
     task = Task.query.get_or_404(task_id)
 
     if current_user.role == 'team_member' and current_user in task.assigned_users:
@@ -113,4 +119,6 @@ def complete_task(task_id):
     else:
         flash("You are not allowed to complete this task.", 'danger')
 
-    return redirect(url_for('task.list_tasks'))
+    # Redirect back to the page that sent the request
+    return redirect(url_for('main.team_member_dashboard'))
+

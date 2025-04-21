@@ -3,6 +3,30 @@
 <div class="container mt-4">
     <h2 class="mb-4">Your Tasks</h2>
 
+    <form method="get" class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+        <!-- Search -->
+        <input type="text" name="search" placeholder="Search tasks..." value="{{ search_query }}" class="form-control" style="max-width: 200px;">
+    
+        <!-- Due Date Filter -->
+        <select name="due_filter" class="form-select" style="max-width: 150px;">
+            <option value="all" {% if filter_due == 'all' %}selected{% endif %}>All Due</option>
+            <option value="today" {% if filter_due == 'today' %}selected{% endif %}>Today</option>
+            <option value="week" {% if filter_due == 'week' %}selected{% endif %}>This Week</option>
+        </select>
+    
+        <!-- Priority Filter -->
+        <select name="priority" class="form-select" style="max-width: 150px;">
+            <option value="" {% if not priority_filter %}selected{% endif %}>All Priorities</option>
+            <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Low</option>
+            <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Medium</option>
+            <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>High</option>
+        </select>
+    
+        <!-- Submit -->
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+    
+
     {% if tasks %}
     <table class="table table-striped">
         <thead>

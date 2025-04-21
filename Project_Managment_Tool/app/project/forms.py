@@ -3,6 +3,7 @@ from wtforms import StringField, TextAreaField, DateField, SelectField, SubmitFi
 from wtforms.validators import DataRequired
 from app.models import User
 
+# Project creation form
 class ProjectForm(FlaskForm):
     name = StringField('Project Name', validators=[DataRequired()])
     description = TextAreaField('Description')

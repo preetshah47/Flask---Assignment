@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, flash, render_template, redirect, request, url_for
 from flask_login import current_user, login_required
-from app.models import Project, User
+from .forms import UpdateProfileForm
+from app.models import Project, Task, User
 from app import db
 
 main = Blueprint('main', __name__)
@@ -9,6 +10,7 @@ from flask_login import current_user
 
 @main.route('/')
 def home():
+    # Home route for role wise dashboards
     if current_user.is_authenticated:
         if current_user.role == 'admin':
             return redirect(url_for('main.admin_dashboard'))
@@ -17,9 +19,11 @@ def home():
         elif current_user.role == 'team_member':
             return redirect(url_for('main.team_member_dashboard'))
     return render_template('welcome.html')
+
 @main.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
+    # Admin Dashboard
     if current_user.role != 'admin':
         return redirect(url_for('main.home'))
 
@@ -52,11 +56,10 @@ def admin_dashboard():
         status_filter=status_filter
     )
 
-
-
 @main.route('/project_manager/dashboard')
 @login_required
 def project_manager_dashboard():
+    # Project Manager Dashboard
     if current_user.role != 'project_manager':
         return redirect(url_for('main.home'))
 
@@ -80,16 +83,40 @@ def project_manager_dashboard():
 @main.route('/team_member/dashboard')
 @login_required
 def team_member_dashboard():
+    #Team Member dashboard
     if current_user.role != 'team_member':
         return redirect(url_for('main.home'))
 
     tasks = current_user.tasks
 
-    return render_template('dashboard/team_dashboard.html', tasks=tasks)
+    # Search Bar
+    search_query = request.args.get('search', '').lower()
+    if search_query:
+        tasks = [task for task in tasks if
+                 search_query in task.title.lower() or
+                 search_query in task.description.lower()]
+
+    # Due date filter 
+    filter_due = request.args.get('due_filter', 'all')
+    today = datetime.now(timezone.utc).date()
+
+    if filter_due == 'today':
+        tasks = [task for task in tasks if task.due_date and task.due_date == today]
+    elif filter_due == 'week':
+        end_of_week = today + timedelta(days=7)
+        tasks = [task for task in tasks if task.due_date and today <= task.due_date <= end_of_week]
+
+     # Priority filter
+    priority_filter = request.args.get('priority', '').lower()
+    if priority_filter in ['low', 'medium', 'high']:
+        tasks = [task for task in tasks if task.priority.lower() == priority_filter]
+
+    return render_template('dashboard/team_dashboard.html', tasks=tasks, search_query=search_query, filter_due=filter_due, priority_filter=priority_filter)
 
 @main.route('/admin/edit_user/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 def edit_user(user_id):
+    # Edit user route
     if current_user.role != 'admin':
         return redirect(url_for('main.home'))
 
@@ -114,6 +141,7 @@ def edit_user(user_id):
 @main.route('/admin/delete_user/<int:user_id>', methods=['GET'])
 @login_required
 def delete_user(user_id):
+    # Delete User route
     # Ensure the current user is an admin
     if current_user.role != 'admin':
         return redirect(url_for('main.home'))
@@ -135,30 +163,10 @@ def delete_user(user_id):
 
     return redirect(url_for('main.admin_dashboard'))
 
-@main.route('/admin/delete_project/<int:project_id>', methods=['GET'])
-@login_required
-def delete_project(project_id):
-    if current_user.role != 'admin':
-        return redirect(url_for('main.home'))
-
-    project = Project.query.get(project_id)
-    if not project:
-        flash('Project not found', 'danger')
-        return redirect(url_for('main.admin_dashboard'))
-
-    try:
-        db.session.delete(project)
-        db.session.commit()
-        flash('Project deleted successfully', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error deleting project: {str(e)}', 'danger')
-
-    return redirect(url_for('main.admin_dashboard'))
-
-@main.route('/admin/view_tasks/<int:project_id>', methods=['GET'])
+@main.route('/view_tasks/<int:project_id>', methods=['GET'])
 @login_required
 def view_tasks(project_id):
+    # View Task route
     project = Project.query.get(project_id)
     if not project:
         flash('Project not found', 'danger')
@@ -167,16 +175,57 @@ def view_tasks(project_id):
     tasks = project.tasks  
     return render_template('tasks/task_list.html', project=project, tasks=tasks)
 
-@main.route('/admin/edit_project/<int:project_id>', methods=['GET', 'POST'])
+@main.route('/<int:project_id>/task/<int:task_id>/delete', methods=['POST'])
 @login_required
-def edit_project(project_id):
-    if current_user.role != 'admin':
+def delete_task(project_id, task_id):
+    # Route for deleting task
+    project = Project.query.get(project_id)
+    task = Task.query.get_or_404(task_id)
+
+    # Only allow admin or project manager who owns the project
+    if current_user.role not in ['admin', 'project_manager'] or (
+        current_user.role == 'project_manager' and task.project.manager_id != current_user.id):
+        flash("You don't have permission to delete this task.", 'danger')
+        return redirect(url_for('task.list_tasks', project_id=project.id))
+    
+    db.session.delete(task)
+    db.session.commit()
+    flash('Task deleted successfully!', 'success')
+    return redirect(url_for('main.view_tasks', project_id=project_id))
+
+@main.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    # Route to update profile
+    form = UpdateProfileForm(obj=current_user)
+
+    if form.validate_on_submit():
+        current_user.name = form.name.data
+        current_user.email = form.email.data
+
+        if form.password.data:
+            current_user.set_password(form.password.data)
+
+        db.session.commit()
+        flash('Your profile has been updated!', 'success')
         return redirect(url_for('main.home'))
 
+    return render_template('profile.html', form=form)
+
+@main.route('/project/edit/<int:project_id>', methods=['GET', 'POST'])
+@login_required
+def edit_project(project_id):
+    # To edit project
     project = Project.query.get(project_id)
     if not project:
         flash('Project not found', 'danger')
-        return redirect(url_for('main.admin_dashboard'))
+        return redirect(url_for('main.home'))
+
+    # Allow only admin or project manager who owns the project
+    if current_user.role not in ['admin', 'project_manager'] or (
+        current_user.role == 'project_manager' and project.manager_id != current_user.id):
+        flash("You don't have permission to edit this project.", 'danger')
+        return redirect(url_for('main.home'))
 
     if request.method == 'POST':
         project.name = request.form['name']
@@ -187,9 +236,35 @@ def edit_project(project_id):
         try:
             db.session.commit()
             flash('Project updated successfully.', 'success')
-            return redirect(url_for('main.admin_dashboard'))
+            # Redirect based on the user's role
+            return redirect(url_for('main.project_manager_dashboard') if current_user.role == 'project_manager' else url_for('main.admin_dashboard'))
         except Exception as e:
             db.session.rollback()
             flash(f'Error updating project: {str(e)}', 'danger')
 
     return render_template('dashboard/edit_project.html', project=project)
+
+@main.route('/project/delete/<int:project_id>', methods=['GET'])
+@login_required
+def delete_project(project_id):
+    # Delete Project
+    project = Project.query.get(project_id)
+    if not project:
+        flash('Project not found', 'danger')
+        return redirect(url_for('main.home'))
+
+    # Allow only admin or the assigned project manager
+    if current_user.role not in ['admin', 'project_manager'] or (
+        current_user.role == 'project_manager' and project.manager_id != current_user.id):
+        flash("You don't have permission to delete this project.", 'danger')
+        return redirect(url_for('main.home'))
+
+    try:
+        db.session.delete(project)
+        db.session.commit()
+        flash('Project deleted successfully', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting project: {str(e)}', 'danger')
+
+    return redirect(url_for('main.project_manager_dashboard') if current_user.role == 'project_manager' else url_for('main.admin_dashboard'))
